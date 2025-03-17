@@ -1,8 +1,8 @@
-Collecting workspace information# Solana Token Launchpad
+# Solana Token Launchpad
 
 A powerful web application that enables users to launch their own tokens on the Solana blockchain with complete metadata support.
 
-![Solana Token Launchpad](.github/images/image.png)
+![Solana Token Launchpad](https://res.cloudinary.com/dwdbqwqxk/image/upload/v1742220433/Screenshot_2025-03-17_142015_wbvw1o.png)
 
 [Live Link](https://solana-token-lauchpad.vercel.app/)
 
