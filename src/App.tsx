@@ -1,53 +1,54 @@
-import TokenLauchpadForm from "./components/TokenLauchpadForm"
-import WalletAdapter from "./components/WalletAdapter"
-import { Github, Twitter } from "lucide-react"
+import TokenLauchpadForm from "@/components/TokenLauchpadForm"
+import { Github } from "lucide-react"
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { ModeToggle } from '@/components/mode-toggle'
+import { NetworkSelector } from '@/components/NetworkSelector'
+import { useNetwork } from '@/context/NetworkContext'
+import AirdropSol from '@/components/airdrop-sol'
+import { Card } from "@/components/ui/card"
 
 const App = () => {
+  const { network } = useNetwork()
+  const isDevnet = network === 'devnet'
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/70 flex flex-col">
-      <header className="py-6 px-4 border-b border-border/40 shadow-sm backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border/40 sticky top-0 z-10 bg-background">
+        <div className="container mx-auto px-4 h-16 flex justify-between items-center">
+          <h1 className="text-lg font-semibold">
             Solana Token Launchpad
           </h1>
-          <WalletAdapter />
+          <a
+            href="https://github.com/idityaGE/Solana-Token-Lauchpad"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Github size={16} />
+            <span className="hidden sm:inline">GitHub</span>
+          </a>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12 flex-1">
-        <div className="max-w-4xl mx-auto">
+      <main className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
+          {/* Wallet Connection Card */}
+          <Card className="p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row items-stretch gap-7 sm:gap-4">
+              <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+                <NetworkSelector />
+                {isDevnet && <AirdropSol />}
+              </div>
+              <div className="flex items-center justify-between gap-2 sm:ml-auto flex-wrap">
+                <WalletMultiButton />
+                <ModeToggle />
+              </div>
+            </div>
+          </Card>
+
           <TokenLauchpadForm />
         </div>
       </main>
-
-      <footer className="py-4 border-t border-border/20 text-center text-xs text-muted-foreground">
-        <div className="container mx-auto flex items-center justify-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <a
-              href="https://github.com/idityaGE/WEB-3/tree/main/07-token_lauchpad"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center hover:text-foreground transition-colors"
-            >
-              <Github size={16} className="mr-1" />
-              <span>GitHub</span>
-            </a>
-          </div>
-          <span>•</span>
-          <div className="flex items-center space-x-2">
-            <span>Made by</span>
-            <a
-              href="https://twitter.com/idityage"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center hover:text-blue-400 transition-colors font-medium"
-            >
-              <Twitter size={15} className="mr-1 text-blue-400" />
-              <span>@idityage</span>
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
