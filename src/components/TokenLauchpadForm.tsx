@@ -34,8 +34,8 @@ const formSchema = z.object({
   }),
   Decimal: z.number().min(0, {
     message: "Decimals must be at least 0."
-  }).max(18, {
-    message: "Decimals cannot exceed 18."
+  }).max(9, {
+    message: "Decimals cannot exceed 9."
   }),
   RevokeMint: z.boolean(),
   RevokeFreeze: z.boolean(),
@@ -53,7 +53,7 @@ export type FormSchema = z.infer<typeof formSchema>
 
 const TokenLaunchpadForm = () => {
   const { connection } = useConnection()
-  const { publicKey, sendTransaction } = useWallet()
+  const { publicKey, sendTransaction, connected } = useWallet()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [tokenAddress, setTokenAddress] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -73,13 +73,15 @@ const TokenLaunchpadForm = () => {
   })
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!publicKey) {
+    if (!publicKey || !connected) {
       toast.error("Please connect your wallet first")
       return
     }
 
     setIsSubmitting(true)
     setTokenAddress(null)
+
+    console.log(values);
 
     try {
       const data = await createToken(connection, publicKey, values, sendTransaction)
