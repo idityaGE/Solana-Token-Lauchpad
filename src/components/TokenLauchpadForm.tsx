@@ -8,12 +8,13 @@ import { Switch } from "./ui/switch"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Textarea } from "./ui/textarea"
-import { Sparkles, AlertCircle, Copy, CheckCircle2 } from "lucide-react"
+import { Sparkles, AlertCircle, Copy, CheckCircle2, ExternalLink } from "lucide-react"
 import { Card, CardContent } from "./ui/card"
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert"
 import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import createToken from "@/utils/createToken"
 import { Separator } from "./ui/separator"
+import { useNetwork } from "@/context/NetworkContext"
 
 const formSchema = z.object({
   TokenName: z.string().min(2, {
@@ -52,11 +53,14 @@ const formSchema = z.object({
 export type FormSchema = z.infer<typeof formSchema>
 
 const TokenLaunchpadForm = () => {
+  const { network } = useNetwork()
   const { connection } = useConnection()
   const { publicKey, sendTransaction, connected } = useWallet()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [tokenAddress, setTokenAddress] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [mintAddress, setMintAddress] = useState<string | null>(null)
+  const [associateTokenAddress, setAssociateTokenAddress] = useState<string | null>(null)
+  const [copiedMint, setCopiedMint] = useState(false)
+  const [copiedATA, setCopiedATA] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,14 +83,16 @@ const TokenLaunchpadForm = () => {
     }
 
     setIsSubmitting(true)
-    setTokenAddress(null)
+    setMintAddress(null)
+    setAssociateTokenAddress(null)
 
     console.log(values);
 
     try {
       const data = await createToken(connection, publicKey, values, sendTransaction)
       toast.success("Token created successfully!")
-      setTokenAddress(data.mintAddress)
+      setMintAddress(data.mintAddress)
+      setAssociateTokenAddress(data.associateTokenAddress)
       form.reset()
     } catch (error: unknown) {
       console.error("Error creating token:", error)
@@ -97,34 +103,92 @@ const TokenLaunchpadForm = () => {
     }
   }
 
-  const copyToClipboard = () => {
-    if (tokenAddress) {
-      navigator.clipboard.writeText(tokenAddress)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-      toast.success("Address copied to clipboard")
+  const copyToClipboard = (address: string, type: 'mint' | 'ata') => {
+    navigator.clipboard.writeText(address)
+    if (type === 'mint') {
+      setCopiedMint(true)
+      setTimeout(() => setCopiedMint(false), 2000)
+    } else {
+      setCopiedATA(true)
+      setTimeout(() => setCopiedATA(false), 2000)
     }
+    toast.success("Address copied to clipboard")
   }
 
   return (
     <div className="space-y-4">
       <Card className="border-border">
         <CardContent className="p-6">
-          {tokenAddress && (
-            <Alert className="mb-6 border-border">
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertTitle className="font-medium">Token Created Successfully</AlertTitle>
-              <AlertDescription>
-                <div className="mt-2 flex items-center gap-2 flex-wrap">
-                  <code className="px-2 py-1 bg-muted rounded text-xs font-mono">{tokenAddress}</code>
-                  <button
-                    onClick={copyToClipboard}
-                    className="p-1 rounded hover:bg-muted transition-colors"
-                    aria-label="Copy address"
-                  >
-                    {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </button>
+          {mintAddress && (
+            <Alert className="mb-6 border-border bg-muted/30">
+              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500" />
+              <AlertTitle className="font-semibold text-base mb-3">Token Created Successfully! 🎉</AlertTitle>
+              <AlertDescription className="space-y-4">
+                {/* Mint Address */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Mint Address</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => mintAddress && copyToClipboard(mintAddress, 'mint')}
+                      >
+                        {copiedMint ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => window.open(`https://explorer.solana.com/address/${mintAddress}?cluster=${network}`, '_blank')}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <code className="block w-full px-3 py-2 bg-background rounded-md text-xs font-mono border border-border break-all">
+                    {mintAddress}
+                  </code>
                 </div>
+
+                {/* Associated Token Address */}
+                {associateTokenAddress && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Associated Token Address</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          onClick={() => copyToClipboard(associateTokenAddress, 'ata')}
+                        >
+                          {copiedATA ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          onClick={() => window.open(`https://explorer.solana.com/address/${associateTokenAddress}?cluster=${network}`, '_blank')}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <code className="block w-full px-3 py-2 bg-background rounded-md text-xs font-mono border border-border break-all">
+                      {associateTokenAddress}
+                    </code>
+                  </div>
+                )}
               </AlertDescription>
             </Alert>
           )}

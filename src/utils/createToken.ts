@@ -129,7 +129,7 @@ const createToken = async (
       TOKEN_2022_PROGRAM_ID
     );
 
-    console.log("Associate Token Address:", JSON.stringify(associatedTokenAddress));
+    console.log("Associate Token Address:", associatedTokenAddress.toBase58());
 
     // Create a transaction with multiple instructions
     const transaction = new Transaction();
@@ -175,7 +175,7 @@ const createToken = async (
     );
 
     // Add description if provided
-    if (values.Description) {
+    if (values.Description && values.Description.length > 0) {
       transaction.add(
         // Instruction to update metadata, adding custom field
         createUpdateFieldInstruction({
@@ -188,7 +188,7 @@ const createToken = async (
       );
     }
 
-    // 3. Create associated token account for user wallet
+    // 2. Create associated token account for user wallet
     transaction.add(
       createAssociatedTokenAccountInstruction(
         publicKey, // payer
@@ -198,7 +198,7 @@ const createToken = async (
         TOKEN_2022_PROGRAM_ID
       ),
 
-      // 4. Mint tokens to user's associated token account
+      // 3. Mint tokens to user's associated token account
       createMintToInstruction(
         mint, // mint
         associatedTokenAddress, // destination
@@ -209,7 +209,7 @@ const createToken = async (
       )
     );
 
-    // 5. If RevokeMint is true, add instruction to revoke mint authority
+    // 4. If RevokeMint is true, add instruction to revoke mint authority
     if (values.RevokeMint) {
       transaction.add(
         createSetAuthorityInstruction(
@@ -223,7 +223,7 @@ const createToken = async (
       );
     }
 
-    // 6. If RevokeFreeze is true, add instruction to revoke freeze authority
+    // 5. If RevokeFreeze is true, add instruction to revoke freeze authority
     if (values.RevokeFreeze) {
       transaction.add(
         createSetAuthorityInstruction(
@@ -237,31 +237,64 @@ const createToken = async (
       );
     }
 
-    // Set transaction metadata and sign with the mint keypair
+    // Get latest blockhash before setting transaction properties
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+    
+    // Set transaction metadata
     transaction.feePayer = publicKey;
-    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    transaction.recentBlockhash = blockhash;
+    
+    // Sign with the mint keypair
     transaction.partialSign(mintAccountKeypair);
 
+    console.log("Sending transaction...");
+
     // Send transaction to blockchain
-    const signature = await sendTransaction(transaction, connection);
+    const signature = await sendTransaction(transaction, connection, {
+      skipPreflight: false,
+      maxRetries: 3,
+    });
+    
     console.log("Transaction sent with signature:", signature);
 
-    // Wait for confirmation
-    await connection.confirmTransaction(signature, 'confirmed');
-    console.log("Transaction confirmed");
+    // Wait for confirmation with timeout
+    const confirmation = await connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight
+    }, 'confirmed');
+
+    if (confirmation.value.err) {
+      throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+    }
+    
+    console.log("Transaction confirmed successfully");
 
     // getMetaData
     const data = await getMetaData(mint, connection);
 
     // Return the mint account address for reference
     return {
-      associateTokenAddress: JSON.stringify(associatedTokenAddress, null, 2),
+      associateTokenAddress: associatedTokenAddress.toBase58(),
       mintAddress: mintAccountKeypair.publicKey.toBase58(),
       data: data
     };
   } catch (error) {
     console.error("Error creating token:", error);
-    throw new Error(`Token creation failed: ${error instanceof Error ? error.message : String(error)}`);
+    
+    // Provide more detailed error messages
+    if (error instanceof Error) {
+      // Check for common errors
+      if (error.message.includes('0x1')) {
+        throw new Error('Insufficient funds for transaction. Please ensure you have enough SOL for rent and fees.');
+      } else if (error.message.includes('0x0')) {
+        throw new Error('Account already exists. Please try again with a new token.');
+      } else if (error.message.includes('blockhash')) {
+        throw new Error('Transaction expired. Please try again.');
+      }
+      throw new Error(`Token creation failed: ${error.message}`);
+    }
+    throw new Error(`Token creation failed: ${String(error)}`);
   }
 };
 
