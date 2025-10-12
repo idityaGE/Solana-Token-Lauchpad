@@ -2,9 +2,12 @@
 
 A powerful web application that enables users to launch their own tokens on the Solana blockchain with complete metadata support.
 
-![Solana Token Launchpad](https://res.cloudinary.com/dwdbqwqxk/image/upload/v1742220433/Screenshot_2025-03-17_142015_wbvw1o.png)
+<img width="2880" height="1800" alt="Solana Token Launchpad" src="https://github.com/user-attachments/assets/563b8f27-988d-4c18-becf-fc12374685ce" />
+<!-- ![Solana Token Launchpad](https://res.cloudinary.com/dwdbqwqxk/image/upload/v1742220433/Screenshot_2025-03-17_142015_wbvw1o.png) -->
 
-[Live Link](https://solana-token-lauchpad.vercel.app/)
+<!-- [Live Link](https://solana-token-lauchpad.vercel.app/) -->
+---
+[![Type 2](https://img.shields.io/static/v1?label=|&message=Website&color=ff&style=for-the-badge&logo=logoname&logo-color=white)](https://solana-token-lauchpad.vercel.app)
 
 ## Features
 
